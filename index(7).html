@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#090b14">
+<title>Copyright Remover Free by Mr. Nirmit</title>
+<style>
+:root{color-scheme:dark;--bg:#080a12;--panel:#111625;--line:#252d42;--text:#f3f5ff;--muted:#a4acc3;--accent:#8b5cf6;--cyan:#35d5f2}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 10% 0%,#17122d 0,transparent 40%),var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;min-height:100vh}
+.wrap{max-width:900px;margin:auto;padding:22px 15px 40px}.brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}.logo{height:48px;width:48px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(140deg,var(--accent),var(--cyan));font-size:23px;font-weight:900}.brand h1{font-size:clamp(20px,5vw,28px);margin:0}.brand p{margin:3px 0 0;color:var(--muted);font-size:13px}.panel{background:linear-gradient(160deg,#141a2a,#0e1320);border:1px solid var(--line);border-radius:20px;padding:18px;margin:14px 0;box-shadow:0 10px 28px #0003}.intro h2{margin:0 0 8px;font-size:21px}.intro p{margin:0;color:var(--muted);line-height:1.55}.upload{border:1.5px dashed #48516b;border-radius:16px;padding:22px 15px;text-align:center;background:#0b1020}.upload strong{display:block;margin-bottom:6px}.upload input{max-width:100%;margin-top:12px}.video-wrap{margin-top:15px;background:#05070b;border-radius:14px;overflow:hidden;display:none}.video-wrap video{display:block;width:100%;max-height:55vh;background:#000}.controls{display:grid;gap:12px}.field label{display:block;font-size:14px;font-weight:650;margin-bottom:7px}.field small{display:block;color:var(--muted);margin-top:6px;line-height:1.4}.field input[type=file]{width:100%;padding:11px;background:#0b1020;border:1px solid var(--line);border-radius:11px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}.button{border:0;border-radius:12px;padding:13px 15px;font-weight:750;font-size:15px;cursor:pointer;color:white;background:linear-gradient(120deg,#7650db,#3689d9)}.button.secondary{background:#20283b;border:1px solid #34405a}.button:disabled{opacity:.45;cursor:not-allowed}.status{font-size:14px;color:var(--muted);margin:12px 0 0;min-height:22px}.progress{height:8px;border-radius:9px;background:#252c3d;overflow:hidden;margin-top:10px;display:none}.progress span{height:100%;width:0;display:block;background:linear-gradient(90deg,var(--accent),var(--cyan));transition:width .15s}.notice{font-size:12px;color:#aeb7ce;line-height:1.5;margin-top:14px}.download{display:none;margin-top:12px}.download a{display:inline-block;text-decoration:none;padding:12px 15px;border-radius:11px;background:#1b9c79;color:#fff;font-weight:800}.footer{text-align:center;color:#6f7890;font-size:12px;margin:22px 0}.tag{display:inline-block;color:#c7b8ff;border:1px solid #4b3a7c;border-radius:99px;padding:4px 9px;font-size:11px;margin-top:10px}
+@media(min-width:650px){.controls{grid-template-columns:1fr 1fr}.field.full{grid-column:1/-1}.actions{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="brand"><div class="logo">NR</div><div><h1>Copyright Remover Free</h1><p>by Mr. Nirmit · Free video audio tools</p></div></header>
+<section class="panel intro"><h2>Remove or replace video audio</h2><p>Choose a video from your device, preview it, optionally add your own soundtrack, and export a new video. Processing happens locally in this browser.</p><span class="tag">NO VIDEO UPLOAD TO A SERVER</span></section>
+<section class="panel">
+<div class="upload"><strong>Select a video from Gallery / Files</strong><span style="color:var(--muted);font-size:13px">Choose a video to preview and process</span><input id="videoFile" type="file" accept="video/*"></div>
+<div class="video-wrap" id="previewWrap"><video id="preview" controls playsinline></video></div>
+<div class="controls" style="margin-top:16px">
+<div class="field full"><label for="audioFile">Optional: add your own soundtrack</label><input id="audioFile" type="file" accept="audio/*"><small>If you add audio, it will replace the video's original audio. If you don't, the exported video will be silent.</small></div>
+</div>
+<div class="actions"><button id="exportBtn" class="button" disabled>Export video</button><button id="resetBtn" class="button secondary">Reset</button></div>
+<div class="status" id="status" aria-live="polite">Select a video to get started.</div><div class="progress" id="progress"><span id="bar"></span></div><div class="download" id="downloadBox"></div>
+<div class="notice">Export uses your browser's MediaRecorder support and usually creates a WebM file (not MP4). Keep this page open and don't lock your device while exporting. Large/long videos may fail on some phones. This tool doesn't grant copyright permission; only use media you own or have permission to edit.</div>
+</section>
+<div class="footer">Copyright Remover Free · Mr. Nirmit</div>
+</div>
+<script>"use strict";
+const videoInput=document.getElementById('videoFile'),audioInput=document.getElementById('audioFile'),preview=document.getElementById('preview'),previewWrap=document.getElementById('previewWrap'),exportBtn=document.getElementById('exportBtn'),resetBtn=document.getElementById('resetBtn'),statusEl=document.getElementById('status'),progress=document.getElementById('progress'),bar=document.getElementById('bar'),downloadBox=document.getElementById('downloadBox');
+let videoURL=null,audioURL=null,recording=false,recorder=null,stream=null,raf=null;
+function setStatus(t){statusEl.textContent=t}function cleanDownload(){downloadBox.innerHTML='';downloadBox.style.display='none'}
+videoInput.addEventListener('change',()=>{const f=videoInput.files?.[0];if(!f)return;if(!f.type.startsWith('video/')){setStatus('Please select a video file.');return}if(videoURL)URL.revokeObjectURL(videoURL);videoURL=URL.createObjectURL(f);preview.src=videoURL;previewWrap.style.display='block';exportBtn.disabled=false;cleanDownload();setStatus('Video loaded: '+f.name)});
+audioInput.addEventListener('change',()=>{const f=audioInput.files?.[0];if(audioURL)URL.revokeObjectURL(audioURL);audioURL=f?URL.createObjectURL(f):null;setStatus(f?'Soundtrack selected: '+f.name:'No soundtrack selected — export will be silent.')});
+function chooseMime(){const choices=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];return choices.find(x=>MediaRecorder.isTypeSupported(x))||''}
+function stopTracks(s){if(s) s.getTracks().forEach(t=>t.stop())}
+function reset(){if(recording&&recorder&&recorder.state!=='inactive'){try{recorder.stop()}catch(e){}}recording=false;if(raf)cancelAnimationFrame(raf);stopTracks(stream);stream=null;preview.pause();preview.removeAttribute('src');preview.load();previewWrap.style.display='none';if(videoURL)URL.revokeObjectURL(videoURL);if(audioURL)URL.revokeObjectURL(audioURL);videoURL=audioURL=null;videoInput.value='';audioInput.value='';exportBtn.disabled=true;progress.style.display='none';bar.style.width='0';cleanDownload();setStatus('Select a video to get started.')}
+resetBtn.addEventListener('click',reset);
+exportBtn.addEventListener('click',async()=>{
+ if(recording||!videoURL)return;if(!window.MediaRecorder){setStatus('Sorry, video recording is not supported in this browser. Try a recent Chrome browser.');return}
+ const audioFile=audioInput.files?.[0]||null;cleanDownload();exportBtn.disabled=true;progress.style.display='block';bar.style.width='0';recording=true;
+ let audioCtx=null,audioSource=null,audioDestination=null,audioElement=null;
+ try{
+  preview.pause();preview.currentTime=0;preview.muted=true;
+  await preview.play();await new Promise(r=>setTimeout(r,180));
+  const videoStream=preview.captureStream?preview.captureStream():preview.mozCaptureStream?.();if(!videoStream)throw new Error('Video capture is unavailable in this browser. Try Chrome.');
+  const tracks=[...videoStream.getVideoTracks()];
+  if(audioFile){audioCtx=new (window.AudioContext||window.webkitAudioContext)();audioDestination=audioCtx.createMediaStreamDestination();audioElement=new Audio(audioURL);audioElement.loop=false;audioElement.preload='auto';audioSource=audioCtx.createMediaElementSource(audioElement);audioSource.connect(audioDestination);audioSource.connect(audioCtx.destination);await audioCtx.resume();tracks.push(...audioDestination.stream.getAudioTracks());}
+  stream=new MediaStream(tracks);const mime=chooseMime();recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);const chunks=[];
+  recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+  recorder.onerror=e=>{setStatus('Recording error. Please try a shorter video or another browser.')};
+  recorder.onstop=()=>{recording=false;stopTracks(stream);stream=null;preview.muted=false;if(audioElement){audioElement.pause();audioElement.src='';}if(audioCtx){audioCtx.close().catch(()=>{})}progress.style.display='none';bar.style.width='0';exportBtn.disabled=false;if(!chunks.length){setStatus('No video data was recorded. Please try again.');return}const blob=new Blob(chunks,{type:recorder.mimeType||'video/webm'});const outURL=URL.createObjectURL(blob);const filename='copyright-remover-free-'+Date.now()+'.webm';downloadBox.innerHTML='';const a=document.createElement('a');a.href=outURL;a.download=filename;a.textContent='⬇ Download processed video';downloadBox.appendChild(a);downloadBox.style.display='block';setStatus('Export complete! Your video is ready to download.');a.addEventListener('click',()=>setTimeout(()=>URL.revokeObjectURL(outURL),60000),{once:true})};
+  recorder.start(500);if(audioElement){audioElement.currentTime=0;await audioElement.play().catch(()=>{})}setStatus('Exporting video in real time… keep this tab open.');
+  const duration=preview.duration||0;const update=()=>{if(!recording)return;const pct=duration>0?Math.min(100,preview.currentTime/duration*100):0;bar.style.width=pct+'%';if(preview.ended){if(audioElement&& !audioElement.ended){setStatus('Finishing soundtrack…');}else if(recorder&&recorder.state!=='inactive')recorder.stop();return}raf=requestAnimationFrame(update)};preview.onended=()=>{const waitForAudio=audioElement&&!audioElement.ended;if(waitForAudio){audioElement.onended=()=>{if(recorder&&recorder.state!=='inactive')recorder.stop()};setStatus('Video finished. Waiting for soundtrack to finish…')}else if(recorder&&recorder.state!=='inactive')recorder.stop()};raf=requestAnimationFrame(update);
+ }catch(err){recording=false;exportBtn.disabled=false;progress.style.display='none';preview.muted=false;stopTracks(stream);stream=null;if(audioElement){audioElement.pause()}if(audioCtx)audioCtx.close().catch(()=>{});setStatus('Could not export: '+(err?.message||'unknown error')+'. Try a shorter video or Chrome.');}
+});
+</script>
+</body>
+</html>
